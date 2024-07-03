@@ -3,6 +3,7 @@
 //DEFINES
 #define DEBUG 1
 
+//QUE ES TODO ESTO GLOBAL???
 
 //PIN DEFINITIONS
 const int led = 13;
