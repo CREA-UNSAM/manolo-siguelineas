@@ -2,30 +2,33 @@
 
 //DEFINES
 #define DEBUG 1
-//NADA, TODO ES GLOBAAAAL
 
 //PIN DEFINITIONS
-const int led = 13;
-const int button = 34;
-const int analogPins[] = {14, 15, 16, 17, 18, 19};
-const int digitalPins[] = {8, 9};
+#define led       14  //Digital 8 | D8 | GPIO 14
+#define button    15  //Digital 9 | D9 | GPIO 15
 
-// Motor Left
-int motorLP1 = 27; 
-int motorLP2 = 26; 
-int motorLPWM = 14; 
+//MOTOR RIGHT
+#define motorRPWM 11  //D5 | Digital 5| GPIO 11
+#define motorRP1  12  //D6 | Digital 6| GPIO 12
+#define motorRP2  13  //D7 | Digital 7| GPIO 13
 
-// Motor Right
-int motorRP1 = 27; 
-int motorRP2 = 26; 
-int motorRPWM = 14; 
+//MOTOR LEFT
+#define motorLPWM 5   //D3 | Digital 3| GPIO 5
+#define motorLP1  4   //D2 | Digital 2| GPIO 4
+#define motorLP2  6   //D4 | Digital 4| GPIO 6
 
+//SENSOR PINS
+//23 to 28
+const int analogPins[]  = {23, 24, 25, 26, 27, 28};
+const int digitalPins[] = {17, 18};
 
 //GLOBAL CONSTANTS
-const int ANALOG_SENSOR_THRESHOLD = 1024;
+#define ANALOG_SENSOR_THRESHOLD   1024
+#define MAX_SPEED_MOTORS_PWM      1024
 
 
 //GLOBAL VARIABLES
+//TODO: no usar variables globales
 int analogSensorValues[6] = {0, 0, 0, 0, 0, 0};
 int digitalSensorValues[8] = {0, 0, 0, 0, 0, 0, 0, 0};
 const int ledState = 0;
