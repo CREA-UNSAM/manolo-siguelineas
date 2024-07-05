@@ -1,4 +1,5 @@
 #include <Arduino.h>
+#include <PID_v1.h>
 
 //DEFINES
 #define DEBUG 1
@@ -34,6 +35,13 @@ int digitalSensorValues[8] = {0, 0, 0, 0, 0, 0, 0, 0};
 const int ledState = 0;
 int motorSpeeds[2] = {0, 0};
 
+// VARIABLES PID
+double Setpoint, Input, Output;
+double Kp = 2.0, Ki = 5.0, Kd = 1.0;
+
+// PID
+PID myPID(&Input, &Output, &Setpoint, Kp, Ki, Kd, DIRECT);
+
 
 void setup() {
 
@@ -62,6 +70,10 @@ void setup() {
   for (int i = 0; i < 2; i++) {
     pinMode(motorPins[i], OUTPUT);
   }
+  // Configurar el PID
+  Setpoint = 0; // Ajustar el setpoint según sea necesario
+  myPID.SetMode(AUTOMATIC);
+  myPID.SetOutputLimits(-MAX_SPEED_MOTORS_PWM, MAX_SPEED_MOTORS_PWM);
 
   //print the message to the serial monitor
   Serial.println("INITIALIZATION COMPLETED");
@@ -97,7 +109,7 @@ void loop() {
     Serial.println("==============================================================");
   }
 
-  delay(1000);
+  delay(100);
 }
 
 void calibration() {
@@ -155,19 +167,56 @@ void printSensorsValues() {
 }
 
 void calculateMotorsSpeeds() {
-  //calculate the motor speeds based on the sensor values
-  int leftSpeed = 0;
-  int rightSpeed = 0;
+  // Calcular el valor de entrada del PID basado en los sensores
 
-  //calculate the left motor speed
-  leftSpeed = 255;
+  //Sería necesario analizar cuál opción conviene más.
 
-  //calculate the right motor speed
-  rightSpeed = 255;
+  // Método 1: Promedio de todos los sensores analógicos
+  int sum = 0;
+  for (int i = 0; i < 6; i++) {
+    sum += analogSensorValues[i];
+  }
+  Input = sum / 6;
 
-  //store the motor speeds in the motorSpeeds array
-  motorSpeeds[0] = leftSpeed;
-  motorSpeeds[1] = rightSpeed;
+  // Método 2: Valor máximo de los sensores
+  /*
+  int maxVal = analogSensorValues[0];
+  for (int i = 1; i < 6; i++) {
+    if (analogSensorValues[i] > maxVal) {
+      maxVal = analogSensorValues[i];
+    }
+  }
+  Input = maxVal;
+  */
+
+  // Método 3: Peso diferenciado
+  /*
+  Input = (analogSensorValues[0] * 0.1) + (analogSensorValues[1] * 0.2) + 
+          (analogSensorValues[2] * 0.3) + (analogSensorValues[3] * 0.3) + 
+          (analogSensorValues[4] * 0.1);
+  */
+ //Método 4: Suma ponderada
+ //Calcula pesos basados en la posición relativa al centro
+  /*
+  float weightedSum = 0.0;
+  for (int i = 0; i < 6; i++) {
+      float centerOffset = i - 2.5;  // Offset desde el centro
+      float weight = centerOffset > 0 ? centerOffset + 0.5 : centerOffset - 0.5;  // Ajuste de peso gradual
+      weightedSum += analogSensorValues[i] * weight;
+  }
+  */
+  // Calcular el PID
+  myPID.Compute();
+
+  // Ajustar las velocidades de los motores basado en la salida del PID
+  const int baseSpeed = 200; // Velocidad base de los motores
+  //El output va a ir tomando valores positivos y negativos 
+  motorSpeeds[0] = baseSpeed + Output; // Motor izquierdo
+  motorSpeeds[1] = baseSpeed - Output; // Motor derecho
+
+  // Asegurarse de que las velocidades no excedan los límites
+  motorSpeeds[0] = constrain(motorSpeeds[0], -MAX_SPEED_MOTORS_PWM, MAX_SPEED_MOTORS_PWM);
+  motorSpeeds[1] = constrain(motorSpeeds[1], -MAX_SPEED_MOTORS_PWM, MAX_SPEED_MOTORS_PWM);
 }
 
 void printMotorsSpeeds() {
@@ -182,22 +231,34 @@ void printMotorsSpeeds() {
 
 void applySpeedsToMotors() {
   //apply the motor speeds to the motors
+
+  // Motor izquierdo
   if (motorSpeeds[0] > 0) {
     digitalWrite(motorLP1, HIGH);
     digitalWrite(motorLP2, LOW);
-  } else {
+    analogWrite(motorLPWM, motorSpeeds[0]);
+  } else if (motorSpeeds[0] < 0) {
     digitalWrite(motorLP1, LOW);
     digitalWrite(motorLP2, HIGH);
+    analogWrite(motorLPWM, -motorSpeeds[0]);//multiplica por -1 porque el valor es negativo
+  } else {
+    digitalWrite(motorLP1, LOW);
+    digitalWrite(motorLP2, LOW);
+    analogWrite(motorLPWM, 0);
   }
 
+  // Motor derecho
   if (motorSpeeds[1] > 0) {
     digitalWrite(motorRP1, HIGH);
     digitalWrite(motorRP2, LOW);
-  } else {
+    analogWrite(motorRPWM, motorSpeeds[1]);
+  } else if (motorSpeeds[1] < 0) {
     digitalWrite(motorRP1, LOW);
     digitalWrite(motorRP2, HIGH);
+    analogWrite(motorRPWM, -motorSpeeds[1]); 
+  } else {
+    digitalWrite(motorRP1, LOW);
+    digitalWrite(motorRP2, LOW);
+    analogWrite(motorRPWM, 0);
   }
-
-  analogWrite(motorLPWM, motorSpeeds[0]);
-  analogWrite(motorRPWM, motorSpeeds[1]);
 }
