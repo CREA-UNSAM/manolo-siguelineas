@@ -5,35 +5,59 @@
 #define DEBUG 1
 
 //PIN DEFINITIONS
-#define led       14  //Digital 8 | D8 | GPIO 14
-#define button    15  //Digital 9 | D9 | GPIO 15
+const int PIN_LED = 14;  //Digital 8 | D8 | GPIO 14
+const int PIN_BUTTON = 15;  //Digital 9 | D9 | GPIO 15
 
 //MOTOR RIGHT
-#define motorRPWM 11  //D5 | Digital 5| GPIO 11
-#define motorRP1  12  //D6 | Digital 6| GPIO 12
-#define motorRP2  13  //D7 | Digital 7| GPIO 13
+const int PIN_MOTOR_R_PWM = 11;  //D5 | Digital 5| GPIO 11
+const int PIN_MOTOR_R_1 = 12;  //D6 | Digital 6| GPIO 12
+const int PIN_MOTOR_R_2 = 13;  //D7 | Digital 7| GPIO 13
 
 //MOTOR LEFT
-#define motorLPWM 5   //D3 | Digital 3| GPIO 5
-#define motorLP1  4   //D2 | Digital 2| GPIO 4
-#define motorLP2  6   //D4 | Digital 4| GPIO 6
+const int PIN_MOTOR_L_PWM = 5;   //D3 | Digital 3| GPIO 5
+const int PIN_MOTOR_L_1 = 4;   //D2 | Digital 2| GPIO 4
+const int PIN_MOTOR_L_2 = 6;   //D4 | Digital 4| GPIO 6
 
 //SENSOR PINS
-//23 to 28
-const int analogPins[]  = {23, 24, 25, 26, 27, 28};
-const int digitalPins[] = {17, 18};
+const int PIN_SENSOR_0 = 17;
+const int PIN_SENSOR_1 = 23;
+const int PIN_SENSOR_2 = 24;
+const int PIN_SENSOR_3 = 25;
+const int PIN_SENSOR_4 = 26;
+const int PIN_SENSOR_5 = 27;
+const int PIN_SENSOR_6 = 28;
+const int PIN_SENSOR_7 = 18;
+
+const int CANT_ANALOG_SENSORS = 6;
+const int CANT_DIGITAL_SENSORS = 2;
+
+const int CANT_ALL_SENSORS = CANT_ANALOG_SENSORS + CANT_DIGITAL_SENSORS;
+
+
+const int[CANT_ANALOG_SENSORS] PINS_ANALOG_SENSORS = {PIN_SENSOR_1, PIN_SENSOR_2, PIN_SENSOR_3, PIN_SENSOR_4, PIN_SENSOR_5, PIN_SENSOR_6};
+const int[CANT_DIGITAL_SENSORS] PINS_DIGITAL_SENSORS = {PIN_SENSOR_0, PIN_SENSOR_7};
+
 
 //GLOBAL CONSTANTS
 #define ANALOG_SENSOR_THRESHOLD   1024
-#define MAX_SPEED_MOTORS_PWM      1024
+#define MOTORS_MAX_PWM_VALUE      1024
 
 
 //GLOBAL VARIABLES
-//TODO: no usar variables globales
-int analogSensorValues[6] = {0, 0, 0, 0, 0, 0};
-int digitalSensorValues[8] = {0, 0, 0, 0, 0, 0, 0, 0};
-const int ledState = 0;
-int motorSpeeds[2] = {0, 0};
+//TODO: no usar variables globales -> Analizar cual es la mejor practica...
+
+int ledState = 0;
+
+struct MotorsSpeeds {
+  int leftSpeed;
+  int rightSpeed;
+};
+
+struct SensorsData {
+  int analogSensorValues[CANT_ANALOG_SENSORS];
+  int digitalSensorValues[CANT_ALL_SENSORS];
+};
+
 
 // VARIABLES PID
 double Setpoint, Input, Output;
@@ -50,31 +74,42 @@ void setup() {
   Serial.println("STARTING THE PROGRAM");
 
   //initialize the LED pin as an output
-  pinMode(led, OUTPUT);
+  pinMode(PIN_LED, OUTPUT);
 
   //initialize the button pin as an input
-  pinMode(button, INPUT_PULLUP);
+  pinMode(PIN_BUTTON, INPUT_PULLUP);
 
   //initialize 6 analog inputs for sensors
-  for (int i = 0; i < 6; i++) {
-    pinMode(analogPins[i], INPUT);
+  for (int i = 0; i < CANT_ANALOG_SENSORS; i++) {
+    pinMode(PINS_ANALOG_SENSORS[i], INPUT);
   }
 
   //initialize 2 digital inputs for sensors
-  for (int i = 0; i < 2; i++) {
-    pinMode(digitalPins[i], INPUT);
+  for (int i = 0; i < CANT_DIGITAL_SENSORS; i++) {
+    pinMode(PINS_DIGITAL_SENSORS[i], INPUT);
   }
 
+<<<<<<< HEAD
   //initialize 2 pwm outputs for motors
   int motorPins[] = {3, 4};
   for (int i = 0; i < 2; i++) {
     pinMode(motorPins[i], OUTPUT);
   }
+
+=======
+  //initialize the 3 outputs for each motors
+  pinMode(PIN_MOTOR_L_PWM, OUTPUT);
+  pinMode(PIN_MOTOR_L_1, OUTPUT);
+  pinMode(PIN_MOTOR_L_2, OUTPUT);
+
+  pinMode(PIN_MOTOR_R_PWM, OUTPUT);
+  pinMode(PIN_MOTOR_R_1, OUTPUT);
+  pinMode(PIN_MOTOR_R_2, OUTPUT);
+>>>>>>> 729c79861c24c8f05158837a3a3d357519f825e3
   // Configurar el PID
   Setpoint = 0; // Ajustar el setpoint según sea necesario
   myPID.SetMode(AUTOMATIC);
   myPID.SetOutputLimits(-MAX_SPEED_MOTORS_PWM, MAX_SPEED_MOTORS_PWM);
-
   //print the message to the serial monitor
   Serial.println("INITIALIZATION COMPLETED");
 
@@ -91,19 +126,19 @@ void loop() {
     digitalWrite(led, !digitalRead(led));
   }
 
-  readSensorsValues();
+  SensorsData sensorData = readSensorsValues();
 
   if(DEBUG) {
-    printSensorsValues();
+    printSensorsValues(sensorData);
   } 
  
-  calculateMotorsSpeeds();
+  MotorsSpeeds motorsSpeeds = calculateMotorsSpeeds(sensorData);
 
   if(DEBUG) {
-    printMotorsSpeeds();
+    printMotorsSpeeds(motorsSpeeds);
   } 
 
-  applySpeedsToMotors();
+  applySpeedsToMotors(motorsSpeeds);
 
   if(DEBUG){
     Serial.println("==============================================================");
@@ -137,18 +172,27 @@ void calibration() {
 }
 
 void readSensorsValues() {
-  //read the values of the sensors and store them in the analogSensorValues array
-  for (int i = 0; i < 6; i++) {
-    analogSensorValues[i] = analogRead(analogPins[i]);
+
+  SensorsData sensorData;
+  
+  //analog read
+  for (int i = 0; i < CANT_ANALOG_SENSORS; i++) {
+    sensorData.analogSensorValues[i] = analogRead(PINS_ANALOG_SENSORS[i]);
   }
 
-  //read the values of the sensors and store them in the digitalSensorValues array
-  digitalSensorValues[0] = digitalRead(digitalPins[0]);
-  for (int i = 0; i < 6; i++) {
-    digitalSensorValues[i + 1] = analogSensorValues[i] > (ANALOG_SENSOR_THRESHOLD / 2) ? 1 : 0;
+  //digital read
+  sensorData.digitalSensorValues[0] = digitalRead(PINS_DIGITAL_SENSORS[0]);
+
+  //----analog to digital conversion
+  for (int i = 0; i < CANT_ANALOG_SENSORS; i++) {
+    sensorData.digitalSensorValues[i + 1] = sensorData.analogSensorValues[i] > (ANALOG_SENSOR_THRESHOLD / 2) ? 1 : 0;
   }
-  digitalSensorValues[7] = digitalRead(digitalPins[1]);
+
+  sensorData.digitalSensorValues[CANT_ALL_SENSORS - 1] = digitalRead(PINS_DIGITAL_SENSORS[1]);
+
  
+  //return the sensor data
+  return sensorData;
 }
 
 void printSensorsValues() {
