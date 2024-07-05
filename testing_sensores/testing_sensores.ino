@@ -106,19 +106,19 @@ void loop() {
     digitalWrite(led, !digitalRead(led));
   }
 
-  readSensorsValues();
+  SensorsData sensorData = readSensorsValues();
 
   if(DEBUG) {
-    printSensorsValues();
+    printSensorsValues(sensorData);
   } 
  
-  calculateMotorsSpeeds();
+  MotorsSpeeds motorsSpeeds = calculateMotorsSpeeds(sensorData);
 
   if(DEBUG) {
-    printMotorsSpeeds();
+    printMotorsSpeeds(motorsSpeeds);
   } 
 
-  applySpeedsToMotors();
+  applySpeedsToMotors(motorsSpeeds);
 
   if(DEBUG){
     Serial.println("==============================================================");
@@ -152,18 +152,27 @@ void calibration() {
 }
 
 void readSensorsValues() {
-  //read the values of the sensors and store them in the analogSensorValues array
-  for (int i = 0; i < 6; i++) {
-    analogSensorValues[i] = analogRead(analogPins[i]);
+
+  SensorsData sensorData;
+  
+  //analog read
+  for (int i = 0; i < CANT_ANALOG_SENSORS; i++) {
+    sensorData.analogSensorValues[i] = analogRead(PINS_ANALOG_SENSORS[i]);
   }
 
-  //read the values of the sensors and store them in the digitalSensorValues array
-  digitalSensorValues[0] = digitalRead(digitalPins[0]);
-  for (int i = 0; i < 6; i++) {
-    digitalSensorValues[i + 1] = analogSensorValues[i] > (ANALOG_SENSOR_THRESHOLD / 2) ? 1 : 0;
+  //digital read
+  sensorData.digitalSensorValues[0] = digitalRead(PINS_DIGITAL_SENSORS[0]);
+
+  //----analog to digital conversion
+  for (int i = 0; i < CANT_ANALOG_SENSORS; i++) {
+    sensorData.digitalSensorValues[i + 1] = sensorData.analogSensorValues[i] > (ANALOG_SENSOR_THRESHOLD / 2) ? 1 : 0;
   }
-  digitalSensorValues[7] = digitalRead(digitalPins[1]);
+
+  sensorData.digitalSensorValues[CANT_ALL_SENSORS - 1] = digitalRead(PINS_DIGITAL_SENSORS[1]);
+
  
+  //return the sensor data
+  return sensorData;
 }
 
 void printSensorsValues() {
