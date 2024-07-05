@@ -4,35 +4,59 @@
 #define DEBUG 1
 
 //PIN DEFINITIONS
-#define led       14  //Digital 8 | D8 | GPIO 14
-#define button    15  //Digital 9 | D9 | GPIO 15
+const int PIN_LED = 14;  //Digital 8 | D8 | GPIO 14
+const int PIN_BUTTON = 15;  //Digital 9 | D9 | GPIO 15
 
 //MOTOR RIGHT
-#define motorRPWM 11  //D5 | Digital 5| GPIO 11
-#define motorRP1  12  //D6 | Digital 6| GPIO 12
-#define motorRP2  13  //D7 | Digital 7| GPIO 13
+const int PIN_MOTOR_R_PWM = 11;  //D5 | Digital 5| GPIO 11
+const int PIN_MOTOR_R_1 = 12;  //D6 | Digital 6| GPIO 12
+const int PIN_MOTOR_R_2 = 13;  //D7 | Digital 7| GPIO 13
 
 //MOTOR LEFT
-#define motorLPWM 5   //D3 | Digital 3| GPIO 5
-#define motorLP1  4   //D2 | Digital 2| GPIO 4
-#define motorLP2  6   //D4 | Digital 4| GPIO 6
+const int PIN_MOTOR_L_PWM = 5;   //D3 | Digital 3| GPIO 5
+const int PIN_MOTOR_L_1 = 4;   //D2 | Digital 2| GPIO 4
+const int PIN_MOTOR_L_2 = 6;   //D4 | Digital 4| GPIO 6
 
 //SENSOR PINS
-//23 to 28
-const int analogPins[]  = {23, 24, 25, 26, 27, 28};
-const int digitalPins[] = {17, 18};
+const int PIN_SENSOR_0 = 17;
+const int PIN_SENSOR_1 = 23;
+const int PIN_SENSOR_2 = 24;
+const int PIN_SENSOR_3 = 25;
+const int PIN_SENSOR_4 = 26;
+const int PIN_SENSOR_5 = 27;
+const int PIN_SENSOR_6 = 28;
+const int PIN_SENSOR_7 = 18;
+
+const int CANT_ANALOG_SENSORS = 6;
+const int CANT_DIGITAL_SENSORS = 2;
+
+const int CANT_ALL_SENSORS = CANT_ANALOG_SENSORS + CANT_DIGITAL_SENSORS;
+
+
+const int[CANT_ANALOG_SENSORS] PINS_ANALOG_SENSORS = {PIN_SENSOR_1, PIN_SENSOR_2, PIN_SENSOR_3, PIN_SENSOR_4, PIN_SENSOR_5, PIN_SENSOR_6};
+const int[CANT_DIGITAL_SENSORS] PINS_DIGITAL_SENSORS = {PIN_SENSOR_0, PIN_SENSOR_7};
+
 
 //GLOBAL CONSTANTS
 #define ANALOG_SENSOR_THRESHOLD   1024
-#define MAX_SPEED_MOTORS_PWM      1024
+#define MOTORS_MAX_PWM_VALUE      1024
 
 
 //GLOBAL VARIABLES
-//TODO: no usar variables globales
-int analogSensorValues[6] = {0, 0, 0, 0, 0, 0};
-int digitalSensorValues[8] = {0, 0, 0, 0, 0, 0, 0, 0};
-const int ledState = 0;
-int motorSpeeds[2] = {0, 0};
+//TODO: no usar variables globales -> Analizar cual es la mejor practica...
+
+int ledState = 0;
+
+struct MotorsSpeeds {
+  int leftSpeed;
+  int rightSpeed;
+};
+
+struct SensorsData {
+  int analogSensorValues[CANT_ANALOG_SENSORS];
+  int digitalSensorValues[CANT_ALL_SENSORS];
+};
+
 
 
 void setup() {
