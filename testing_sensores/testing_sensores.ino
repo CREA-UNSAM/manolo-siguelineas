@@ -89,14 +89,6 @@ void setup() {
     pinMode(PINS_DIGITAL_SENSORS[i], INPUT);
   }
 
-<<<<<<< HEAD
-  //initialize 2 pwm outputs for motors
-  int motorPins[] = {3, 4};
-  for (int i = 0; i < 2; i++) {
-    pinMode(motorPins[i], OUTPUT);
-  }
-
-=======
   //initialize the 3 outputs for each motors
   pinMode(PIN_MOTOR_L_PWM, OUTPUT);
   pinMode(PIN_MOTOR_L_1, OUTPUT);
@@ -105,7 +97,7 @@ void setup() {
   pinMode(PIN_MOTOR_R_PWM, OUTPUT);
   pinMode(PIN_MOTOR_R_1, OUTPUT);
   pinMode(PIN_MOTOR_R_2, OUTPUT);
->>>>>>> 729c79861c24c8f05158837a3a3d357519f825e3
+
   // Configurar el PID
   Setpoint = 0; // Ajustar el setpoint según sea necesario
   myPID.SetMode(AUTOMATIC);
