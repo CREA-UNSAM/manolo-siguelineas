@@ -66,26 +66,29 @@ void setup() {
   Serial.println("STARTING THE PROGRAM");
 
   //initialize the LED pin as an output
-  pinMode(led, OUTPUT);
+  pinMode(PIN_LED, OUTPUT);
 
   //initialize the button pin as an input
-  pinMode(button, INPUT_PULLUP);
+  pinMode(PIN_BUTTON, INPUT_PULLUP);
 
   //initialize 6 analog inputs for sensors
-  for (int i = 0; i < 6; i++) {
-    pinMode(analogPins[i], INPUT);
+  for (int i = 0; i < CANT_ANALOG_SENSORS; i++) {
+    pinMode(PINS_ANALOG_SENSORS[i], INPUT);
   }
 
   //initialize 2 digital inputs for sensors
-  for (int i = 0; i < 2; i++) {
-    pinMode(digitalPins[i], INPUT);
+  for (int i = 0; i < CANT_DIGITAL_SENSORS; i++) {
+    pinMode(PINS_DIGITAL_SENSORS[i], INPUT);
   }
 
-  //initialize 2 pwm outputs for motors
-  int motorPins[] = {3, 4};
-  for (int i = 0; i < 2; i++) {
-    pinMode(motorPins[i], OUTPUT);
-  }
+  //initialize the 3 outputs for each motors
+  pinMode(PIN_MOTOR_L_PWM, OUTPUT);
+  pinMode(PIN_MOTOR_L_1, OUTPUT);
+  pinMode(PIN_MOTOR_L_2, OUTPUT);
+
+  pinMode(PIN_MOTOR_R_PWM, OUTPUT);
+  pinMode(PIN_MOTOR_R_1, OUTPUT);
+  pinMode(PIN_MOTOR_R_2, OUTPUT);
 
   //print the message to the serial monitor
   Serial.println("INITIALIZATION COMPLETED");
