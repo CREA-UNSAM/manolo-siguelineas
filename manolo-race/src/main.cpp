@@ -62,9 +62,19 @@ struct SensorsData {
 // VARIABLES PID
 double Setpoint, Input, Output;
 double Kp = 2.0, Ki = 5.0, Kd = 1.0;
+const int SPEED_BASE = 200; // Velocidad base de los motores
 
 // PID
 PID myPID(&Input, &Output, &Setpoint, Kp, Ki, Kd, DIRECT);
+
+
+//FUNCTIONS
+void calibration();
+SensorsData readSensorsValues();
+void printSensorsValues(SensorsData sensorData);
+MotorsSpeeds calculateMotorsSpeeds(SensorsData sensorData);
+void printMotorsSpeeds(MotorsSpeeds motorSpeeds);
+void applySpeedsToMotors(MotorsSpeeds motorSpeeds);
 
 
 void setup() {
@@ -101,7 +111,7 @@ void setup() {
   // Configurar el PID
   Setpoint = 0; // Ajustar el setpoint según sea necesario
   myPID.SetMode(AUTOMATIC);
-  myPID.SetOutputLimits(-MAX_SPEED_MOTORS_PWM, MAX_SPEED_MOTORS_PWM);
+  myPID.SetOutputLimits(-MOTORS_MAX_PWM_VALUE, MOTORS_MAX_PWM_VALUE);
   //print the message to the serial monitor
   Serial.println("INITIALIZATION COMPLETED");
 
@@ -114,9 +124,11 @@ void setup() {
 void loop() {
 
   //when press the button, switch the state of the led
-  if (digitalRead(button) == LOW) {
-    digitalWrite(led, !digitalRead(led));
+  if (digitalRead(PIN_BUTTON) == LOW) {
+    ledState = !ledState;
+    digitalWrite(PIN_LED, ledState);
   }
+ 
 
   SensorsData sensorData = readSensorsValues();
 
@@ -148,7 +160,7 @@ void calibration() {
 
   //read the values of the sensors and store them in the calibrationValues array
   for (int i = 0; i < 6; i++) {
-    calibrationValues[i] = analogRead(analogPins[i]);
+    calibrationValues[i] = analogRead(PINS_ANALOG_SENSORS[i]);
   }
 
   //print the calibration values to the serial monitor
@@ -163,7 +175,7 @@ void calibration() {
   Serial.println("CALIBRATION COMPLETED");
 }
 
-void readSensorsValues() {
+SensorsData readSensorsValues() {
 
   SensorsData sensorData;
   
@@ -182,27 +194,28 @@ void readSensorsValues() {
 
   sensorData.digitalSensorValues[CANT_ALL_SENSORS - 1] = digitalRead(PINS_DIGITAL_SENSORS[1]);
 
- 
   //return the sensor data
   return sensorData;
 }
 
-void printSensorsValues() {
+void printSensorsValues(SensorsData sensorData) {
   //print the values of the sensors to the serial monitor
   Serial.print("ANALOG  SENSOR VALUES: ");
   for (int i = 0; i < 6; i++) {
-    Serial.print(analogSensorValues[i]);
+    Serial.print(sensorData.analogSensorValues[i]);
     Serial.print(" : ");
   }
   Serial.println("");
 
   Serial.print("DIGITAL SENSOR VALUES: ");
   for (int i = 0; i < 8; i++) {
-    Serial.print(digitalSensorValues[i] == 1 ? "[|]" : " ___");
+    Serial.print(sensorData.digitalSensorValues[i] == 1 ? "[|]" : " ___");
   }
 }
 
-void calculateMotorsSpeeds() {
+MotorsSpeeds calculateMotorsSpeeds(SensorsData sensorData) {
+
+  MotorsSpeeds motorsSpeeds;
   // Calcular el valor de entrada del PID basado en los sensores
 
   //Sería necesario analizar cuál opción conviene más.
@@ -210,7 +223,7 @@ void calculateMotorsSpeeds() {
   // Método 1: Promedio de todos los sensores analógicos
   int sum = 0;
   for (int i = 0; i < 6; i++) {
-    sum += analogSensorValues[i];
+    sum += sensorData.analogSensorValues[i];
   }
   Input = sum / 6;
 
@@ -244,57 +257,58 @@ void calculateMotorsSpeeds() {
   // Calcular el PID
   myPID.Compute();
 
-  // Ajustar las velocidades de los motores basado en la salida del PID
-  const int baseSpeed = 200; // Velocidad base de los motores
+
   //El output va a ir tomando valores positivos y negativos 
-  motorSpeeds[0] = baseSpeed + Output; // Motor izquierdo
-  motorSpeeds[1] = baseSpeed - Output; // Motor derecho
+  motorsSpeeds.leftSpeed = SPEED_BASE + Output; // Motor izquierdo
+  motorsSpeeds.rightSpeed = SPEED_BASE - Output; // Motor derecho
 
   // Asegurarse de que las velocidades no excedan los límites
-  motorSpeeds[0] = constrain(motorSpeeds[0], -MAX_SPEED_MOTORS_PWM, MAX_SPEED_MOTORS_PWM);
-  motorSpeeds[1] = constrain(motorSpeeds[1], -MAX_SPEED_MOTORS_PWM, MAX_SPEED_MOTORS_PWM);
+  motorsSpeeds.leftSpeed = constrain(motorsSpeeds.leftSpeed, -MOTORS_MAX_PWM_VALUE, MOTORS_MAX_PWM_VALUE);
+  motorsSpeeds.rightSpeed = constrain(motorsSpeeds.rightSpeed, -MOTORS_MAX_PWM_VALUE, MOTORS_MAX_PWM_VALUE);
+
+  return motorsSpeeds;
 }
 
-void printMotorsSpeeds() {
+void printMotorsSpeeds(MotorsSpeeds motorSpeeds) {
   //print the motor speeds to the serial monitor
   Serial.println("");
   Serial.print("L = ");
-  Serial.print(motorSpeeds[0]);
+  Serial.print(motorSpeeds.leftSpeed);
 
   Serial.print(" | R = ");
-  Serial.println(motorSpeeds[1]);
+  Serial.println(motorSpeeds.rightSpeed);
 }
 
-void applySpeedsToMotors() {
+void applySpeedsToMotors(MotorsSpeeds motorSpeeds) {
   //apply the motor speeds to the motors
 
   // Motor izquierdo
-  if (motorSpeeds[0] > 0) {
-    digitalWrite(motorLP1, HIGH);
-    digitalWrite(motorLP2, LOW);
-    analogWrite(motorLPWM, motorSpeeds[0]);
-  } else if (motorSpeeds[0] < 0) {
-    digitalWrite(motorLP1, LOW);
-    digitalWrite(motorLP2, HIGH);
-    analogWrite(motorLPWM, -motorSpeeds[0]);//multiplica por -1 porque el valor es negativo
+  if (motorSpeeds.leftSpeed > 0) {
+    digitalWrite(PIN_MOTOR_L_1, HIGH);
+    digitalWrite(PIN_MOTOR_L_2, LOW);
+    analogWrite(PIN_MOTOR_L_PWM, motorSpeeds.leftSpeed);
+  } else if (motorSpeeds.leftSpeed < 0) {
+    digitalWrite(PIN_MOTOR_L_1, LOW);
+    digitalWrite(PIN_MOTOR_L_2, HIGH);
+    analogWrite(PIN_MOTOR_L_PWM, -motorSpeeds.leftSpeed);//multiplica por -1 porque el valor es negativo
   } else {
-    digitalWrite(motorLP1, LOW);
-    digitalWrite(motorLP2, LOW);
-    analogWrite(motorLPWM, 0);
+    digitalWrite(PIN_MOTOR_L_1, LOW);
+    digitalWrite(PIN_MOTOR_L_2, LOW);
+    analogWrite(PIN_MOTOR_L_PWM, 0);
   }
 
   // Motor derecho
-  if (motorSpeeds[1] > 0) {
-    digitalWrite(motorRP1, HIGH);
-    digitalWrite(motorRP2, LOW);
-    analogWrite(motorRPWM, motorSpeeds[1]);
-  } else if (motorSpeeds[1] < 0) {
-    digitalWrite(motorRP1, LOW);
-    digitalWrite(motorRP2, HIGH);
-    analogWrite(motorRPWM, -motorSpeeds[1]); 
+  if (motorSpeeds.rightSpeed > 0) {
+    digitalWrite(PIN_MOTOR_R_1, HIGH);
+    digitalWrite(PIN_MOTOR_R_2, LOW);
+    analogWrite(PIN_MOTOR_R_PWM, motorSpeeds.rightSpeed);
+  } else if (motorSpeeds.rightSpeed < 0) {
+    digitalWrite(PIN_MOTOR_R_1, LOW);
+    digitalWrite(PIN_MOTOR_R_2, HIGH);
+    analogWrite(PIN_MOTOR_R_PWM, -motorSpeeds.rightSpeed); 
   } else {
-    digitalWrite(motorRP1, LOW);
-    digitalWrite(motorRP2, LOW);
-    analogWrite(motorRPWM, 0);
+    digitalWrite(PIN_MOTOR_R_1, LOW);
+    digitalWrite(PIN_MOTOR_R_2, LOW);
+    analogWrite(PIN_MOTOR_R_PWM, 0);
   }
 }
