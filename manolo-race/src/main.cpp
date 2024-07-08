@@ -42,12 +42,13 @@ const int PINS_DIGITAL_SENSORS[CANT_DIGITAL_SENSORS] = {PIN_SENSOR_0, PIN_SENSOR
 #define ANALOG_SENSOR_THRESHOLD   1024
 #define MOTORS_MAX_PWM_VALUE      1024
 
+#define DELAY_MS_MAIN_LOOP  100
 
-//GLOBAL VARIABLES
-//TODO: no usar variables globales -> Analizar cual es la mejor practica...
+#define CANT_LONGPRESS_LEN    2500 / DELAY_MS_MAIN_LOOP  // 2.5 seconds
+#define CANT_SHORTPRESS_LEN   500 / DELAY_MS_MAIN_LOOP   // 0.5 seconds
+#define CANT_WAIT_TO_ACTION_LEN   200 / DELAY_MS_MAIN_LOOP   // 0.2 seconds
 
-int ledState = 0;
-
+//STRUCTURES
 struct MotorsSpeeds {
   int leftSpeed;
   int rightSpeed;
@@ -58,6 +59,15 @@ struct SensorsData {
   int digitalSensorValues[CANT_ALL_SENSORS];
 };
 
+//ENUMS
+enum events { EV_NONE = 0, EV_SHORTPRESS = 1, EV_LONGPRESS = 2};
+
+enum state { STATE_SETUP= -1, STATE_STOP = 0, STATE_CALIBRATION = 1, STATE_RUNNING = 2};
+
+//GLOBAL VARIABLES
+
+int ledState = 0;
+state currentState = STATE_SETUP;
 
 // VARIABLES PID
 double Setpoint, Input, Output;
@@ -75,6 +85,34 @@ void printSensorsValues(SensorsData sensorData);
 MotorsSpeeds calculateMotorsSpeeds(SensorsData sensorData);
 void printMotorsSpeeds(MotorsSpeeds motorSpeeds);
 void applySpeedsToMotors(MotorsSpeeds motorSpeeds);
+
+events handle_button()
+{
+  static int button_pressed_counter = 0;
+  static int button_not_pressed_counter = 0;
+  events event = EV_NONE;
+  int button_now_pressed = !digitalRead(PIN_BUTTON); // pin low -> pressed
+
+  if (button_now_pressed){
+    ++button_pressed_counter;
+    button_not_pressed_counter = 0;
+  }    
+  else{
+    ++button_not_pressed_counter;
+    // button_pressed_counter = 0;
+  }
+
+  if (button_not_pressed_counter >= CANT_SHORTPRESS_LEN){
+    if (button_pressed_counter >= CANT_LONGPRESS_LEN){
+    event = EV_LONGPRESS;
+    }
+    else if (button_pressed_counter >= CANT_SHORTPRESS_LEN){
+      event = EV_SHORTPRESS;
+    }
+    button_pressed_counter = 0;
+  }
+  return event;
+}
 
 
 void setup() {
@@ -115,38 +153,43 @@ void setup() {
   //print the message to the serial monitor
   Serial.println("INITIALIZATION COMPLETED");
 
-
-  //TODO: use the button to start the calibration
-  // calibration();
-  
+  currentState = STATE_STOP;
 }
 
 void loop() {
 
-  //when press the button, switch the state of the led
-  if (digitalRead(PIN_BUTTON) == LOW) {
-    ledState = !ledState;
-    digitalWrite(PIN_LED, ledState);
+  events event = handle_button();
+
+  switch (currentState) {
+
+    case STATE_STOP:
+
+    case STATE_CALIBRATION:
+      calibration();
+      currentState = STATE_STOP;
+      break;
+
+    case STATE_RUNNING:
+      SensorsData sensorData = readSensorsValues();
+      
+      if(DEBUG) {
+        printSensorsValues(sensorData);
+      } 
+    
+      MotorsSpeeds motorsSpeeds = calculateMotorsSpeeds(sensorData);
+
+      if(DEBUG) {
+        printMotorsSpeeds(motorsSpeeds);
+      } 
+
+      applySpeedsToMotors(motorsSpeeds);
+
+      if(DEBUG){
+        Serial.println("==============================================================");
+      }
+      break;
   }
- 
 
-  SensorsData sensorData = readSensorsValues();
-
-  if(DEBUG) {
-    printSensorsValues(sensorData);
-  } 
- 
-  MotorsSpeeds motorsSpeeds = calculateMotorsSpeeds(sensorData);
-
-  if(DEBUG) {
-    printMotorsSpeeds(motorsSpeeds);
-  } 
-
-  applySpeedsToMotors(motorsSpeeds);
-
-  if(DEBUG){
-    Serial.println("==============================================================");
-  }
 
   delay(100);
 }
