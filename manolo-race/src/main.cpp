@@ -118,7 +118,7 @@ events handle_button()
 void setup() {
 
   //initialize the serial communication
-  Serial.begin(115200);
+  Serial.begin(9600);
   Serial.println("STARTING THE PROGRAM");
 
   //initialize the LED pin as an output
@@ -198,12 +198,43 @@ void calibration() {
   //print the message to the serial monitor
   Serial.println("CALIBRATION STARTED");
 
-  //initialize the calibration values
-  int calibrationValues[6] = {0, 0, 0, 0, 0, 0};
+  //blink the led to indicate the calibration process
+  for (int i = 0; i < 5; i++) {
+    digitalWrite(PIN_LED, HIGH);
+    delay(50);
+    digitalWrite(PIN_LED, LOW);
+    delay(50);
+  }
 
-  //read the values of the sensors and store them in the calibrationValues array
-  for (int i = 0; i < 6; i++) {
-    calibrationValues[i] = analogRead(PINS_ANALOG_SENSORS[i]);
+  //wait for 1 second and then start the calibration
+  digitalWrite(PIN_LED, HIGH);
+  delay(1000);
+  digitalWrite(PIN_LED, LOW);
+
+
+  //rotate the motors to calibrate the sensors
+  // applySpeedsToMotors({-255, 255});
+
+  //initialize the calibration values
+  int calibrationMaxValues[6] = {0, 0, 0, 0, 0, 0};
+  int calibrationMinValues[6] = {ANALOG_SENSOR_MAX, ANALOG_SENSOR_MAX, ANALOG_SENSOR_MAX, ANALOG_SENSOR_MAX, ANALOG_SENSOR_MAX, ANALOG_SENSOR_MAX};
+		
+  //execute the reading for 3 second
+  long startTime = millis();
+
+  while (startTime + 3000 < millis()) {
+
+    for (int i = 0; i < CANT_ANALOG_SENSORS; i++) {
+
+      int sensorValue = analogRead(PINS_ANALOG_SENSORS[i]);
+
+      if (sensorValue > calibrationMaxValues[i]) {
+        calibrationMaxValues[i] = sensorValue;
+      }
+      if (sensorValue < calibrationMinValues[i]) {
+        calibrationMinValues[i] = sensorValue;
+      }
+    }
   }
 
   //print the calibration values to the serial monitor
@@ -211,8 +242,11 @@ void calibration() {
     Serial.print("Sensor ");
     Serial.print(i);
     Serial.print(": ");
-    Serial.println(calibrationValues[i]);
+    // Serial.println(calibrationValues[i]);
   }
+
+  // applySpeedsToMotors({-255, 255});
+
 
   //print the message to the serial monitor
   Serial.println("CALIBRATION COMPLETED");
