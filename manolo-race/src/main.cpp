@@ -5,18 +5,18 @@
 #define DEBUG 1
 
 //PIN DEFINITIONS
-const int PIN_LED = 14;  //Digital 8 | D8 | GPIO 14
-const int PIN_BUTTON = 15;  //Digital 9 | D9 | GPIO 15
+const int PIN_LED = 14;           //D8 | Digital 8 | GPIO 14
+const int PIN_BUTTON = 15;        //D9 | Digital 9 | GPIO 15
 
 //MOTOR RIGHT
-const int PIN_MOTOR_R_PWM = 11;  //D5 | Digital 5| GPIO 11
-const int PIN_MOTOR_R_1 = 12;  //D6 | Digital 6| GPIO 12
-const int PIN_MOTOR_R_2 = 13;  //D7 | Digital 7| GPIO 13
+const int PIN_MOTOR_R_PWM = 11;   //D5 | Digital 5 | GPIO 11
+const int PIN_MOTOR_R_1 = 12;     //D6 | Digital 6 | GPIO 12
+const int PIN_MOTOR_R_2 = 13;     //D7 | Digital 7 | GPIO 13
 
 //MOTOR LEFT
-const int PIN_MOTOR_L_PWM = 5;   //D3 | Digital 3| GPIO 5
-const int PIN_MOTOR_L_1 = 4;   //D2 | Digital 2| GPIO 4
-const int PIN_MOTOR_L_2 = 6;   //D4 | Digital 4| GPIO 6
+const int PIN_MOTOR_L_PWM = 5;    //D3 | Digital 3 | GPIO 5
+const int PIN_MOTOR_L_1 = 4;      //D2 | Digital 2 | GPIO 4
+const int PIN_MOTOR_L_2 = 6;      //D4 | Digital 4 | GPIO 6
 
 //SENSOR PINS
 const int PIN_SENSOR_0 = 17;
