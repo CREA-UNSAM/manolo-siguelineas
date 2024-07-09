@@ -294,6 +294,18 @@ MotorsSpeeds calculateMotorsSpeeds(SensorsData sensorData) {
   MotorsSpeeds motorsSpeeds;
   // Calcular el valor de entrada del PID basado en los sensores
 
+  if( sensorData.digitalSensorValues[0] == 1 && sensorData.digitalSensorValues[7] == 1){
+    //Si ambos sensores digitales detectan una línea, se detiene el robot
+    Input = 0;
+    myPID.SetMode(MANUAL);
+    myPID.SetOutputLimits(-MOTORS_MAX_PWM_VALUE, MOTORS_MAX_PWM_VALUE);
+    myPID.SetTunings(0, 0, 0);
+    myPID.Compute();
+    motorsSpeeds.leftSpeed = 0;
+    motorsSpeeds.rightSpeed = 0;
+    return motorsSpeeds;
+  }
+
   //Sería necesario analizar cuál opción conviene más.
 
   // Método 1: Promedio de todos los sensores analógicos
