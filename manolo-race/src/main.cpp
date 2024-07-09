@@ -61,7 +61,6 @@ struct SensorsData {
 
 //ENUMS
 enum events { EV_NONE = 0, EV_SHORTPRESS = 1, EV_LONGPRESS = 2};
-
 enum state { STATE_SETUP= -1, STATE_STOP = 0, STATE_CALIBRATION = 1, STATE_RUNNING = 2};
 
 //GLOBAL VARIABLES
@@ -74,7 +73,7 @@ double Setpoint, Input, Output;
 double Kp = 2.0, Ki = 5.0, Kd = 1.0;
 const int SPEED_BASE = 200; // Velocidad base de los motores
 
-// PID
+//PID
 PID myPID(&Input, &Output, &Setpoint, Kp, Ki, Kd, DIRECT);
 
 
@@ -337,7 +336,7 @@ MotorsSpeeds calculateMotorsSpeeds(SensorsData sensorData) {
 
   //El output va a ir tomando valores positivos y negativos 
   motorsSpeeds.leftSpeed = SPEED_BASE + Output; // Motor izquierdo
-  motorsSpeeds.rightSpeed = SPEED_BASE - Output; // Motor derecho
+  motorsSpeeds.rightSpeed = SPEED_BASE - Output; // Motor derecho - EL MENOS ES A PROPOSITO NO BORRAR
 
   // Asegurarse de que las velocidades no excedan los límites
   motorsSpeeds.leftSpeed = constrain(motorsSpeeds.leftSpeed, -MOTORS_MAX_PWM_VALUE, MOTORS_MAX_PWM_VALUE);
