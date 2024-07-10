@@ -6,7 +6,7 @@
 
 //PIN DEFINITIONS
 const int PIN_LED = 14;           //D8 | Digital 8 | GPIO 14
-const int PIN_BUTTON = 15;        //D9 | Digital 9 | GPIO 15
+const int PIN_BUTTON = 9;        //D9 | Digital 9 | GPIO 15 --???????? TODO: Revisar todos los pines
 
 //MOTOR RIGHT
 const int PIN_MOTOR_R_PWM = 11;   //D5 | Digital 5 | GPIO 11
@@ -69,7 +69,7 @@ enum state { STATE_SETUP= -1, STATE_STOP = 0, STATE_CALIBRATION = 1, STATE_RUNNI
 int ledState = 0;
 state currentState = STATE_SETUP;
 
-// VARIABLES PID
+//VARIABLES PID
 double Setpoint, Input, Output;
 double Kp = 2.0, Ki = 5.0, Kd = 1.0;
 const int SPEED_BASE = 200; // Velocidad base de los motores
@@ -94,6 +94,7 @@ events handle_button()
   int button_now_pressed = !digitalRead(PIN_BUTTON); // pin low -> pressed
 
   if (button_now_pressed){
+    // Serial.println("Button pressed");
     ++button_pressed_counter;
     button_not_pressed_counter = 0;
   }    
@@ -159,10 +160,21 @@ void setup() {
 void loop() {
 
   events event = handle_button();
+  //print for serial monitor the event
+  if(DEBUG){
+    // Serial.print(event);
+    Serial.print(digitalRead(PIN_BUTTON));
+  }
 
   switch (currentState) {
 
     case STATE_STOP:
+      if (event == EV_SHORTPRESS) {
+        currentState = STATE_RUNNING;
+      } else if (event == EV_LONGPRESS) {
+        currentState = STATE_CALIBRATION;
+      }
+      break;
 
     case STATE_CALIBRATION:
       calibration();
@@ -187,6 +199,9 @@ void loop() {
       if(DEBUG){
         Serial.println("==============================================================");
       }
+      break;
+    
+    default:
       break;
   }
 
