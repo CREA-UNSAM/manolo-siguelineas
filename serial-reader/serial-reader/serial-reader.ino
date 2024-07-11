@@ -1,8 +1,9 @@
 char rcvd;
 
+//TODO: Try this thing
+//https://randomnerdtutorials.com/esp32-webserial-library/ 
 
 void setup() {
-
   Serial.begin(9600);
   Serial.println("STARTING SERIAL READER...");
   Serial.println("------------------------");
