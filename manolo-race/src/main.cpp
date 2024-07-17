@@ -60,6 +60,11 @@ struct SensorsData {
   int digitalSensorValues[CANT_ALL_SENSORS];
 };
 
+struct CalibrationValues {
+  int maxValues[CANT_ANALOG_SENSORS];
+  int minValues[CANT_ANALOG_SENSORS];
+};
+
 //ENUMS
 enum events { EV_NONE = 0, EV_SHORTPRESS = 1, EV_LONGPRESS = 2};
 enum state { STATE_SETUP= -1, STATE_STOP = 0, STATE_CALIBRATION = 1, STATE_RUNNING = 2};
@@ -68,6 +73,7 @@ enum state { STATE_SETUP= -1, STATE_STOP = 0, STATE_CALIBRATION = 1, STATE_RUNNI
 
 int ledState = 0;
 state currentState = STATE_SETUP;
+CalibrationValues calibrationValues = CalibrationValues();
 
 //VARIABLES PID
 double Setpoint, Input, Output;
@@ -202,10 +208,13 @@ void calibration() {
   //rotate the motors to calibrate the sensors
   // applySpeedsToMotors({-255, 255});
 
-  //initialize the calibration values
-  int calibrationMaxValues[6] = {0, 0, 0, 0, 0, 0};
-  int calibrationMinValues[6] = {ANALOG_SENSOR_MAX, ANALOG_SENSOR_MAX, ANALOG_SENSOR_MAX, ANALOG_SENSOR_MAX, ANALOG_SENSOR_MAX, ANALOG_SENSOR_MAX};
-		
+  //reset the calibration values
+  for (int i = 0; i < CANT_ANALOG_SENSORS; i++) {
+    calibrationValues.maxValues[i] = 0;
+    calibrationValues.minValues[i] = ANALOG_SENSOR_MAX;
+  }
+
+
   //execute the reading for 3 second
   long startTime = millis();
 
@@ -215,21 +224,23 @@ void calibration() {
 
       int sensorValue = analogRead(PINS_ANALOG_SENSORS[i]);
 
-      if (sensorValue > calibrationMaxValues[i]) {
-        calibrationMaxValues[i] = sensorValue;
+      if (sensorValue > calibrationValues.maxValues[i]) {
+        calibrationValues.maxValues[i] = sensorValue;
       }
-      if (sensorValue < calibrationMinValues[i]) {
-        calibrationMinValues[i] = sensorValue;
+      if (sensorValue < calibrationValues.minValues[i]) {
+        calibrationValues.minValues[i] = sensorValue;
       }
     }
   }
 
   //print the calibration values to the serial monitor
   for (int i = 0; i < 6; i++) {
-    Serial.print("Sensor ");
     Serial.print(i);
     Serial.print(": ");
-    // Serial.println(calibrationValues[i]);
+    Serial.print(calibrationValues.maxValues[i]);
+    Serial.print(" | ");
+    Serial.print(calibrationValues.minValues[i]);
+    Serial.print(" # ");
   }
 
   // applySpeedsToMotors({-255, 255});
