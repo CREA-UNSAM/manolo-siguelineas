@@ -85,35 +85,7 @@ void printSensorsValues(SensorsData sensorData);
 MotorsSpeeds calculateMotorsSpeeds(SensorsData sensorData);
 void printMotorsSpeeds(MotorsSpeeds motorSpeeds);
 void applySpeedsToMotors(MotorsSpeeds motorSpeeds);
-
-events handle_button()
-{
-  static int button_pressed_counter = 0;
-  static int button_not_pressed_counter = 0;
-  events event = EV_NONE;
-  int button_now_pressed = !digitalRead(PIN_BUTTON); // pin low -> pressed
-
-  if (button_now_pressed){
-    // Serial.println("Button pressed");
-    ++button_pressed_counter;
-    button_not_pressed_counter = 0;
-  }    
-  else{
-    ++button_not_pressed_counter;
-    // button_pressed_counter = 0;
-  }
-
-  if (button_not_pressed_counter >= CANT_SHORTPRESS_LEN){
-    if (button_pressed_counter >= CANT_LONGPRESS_LEN){
-    event = EV_LONGPRESS;
-    }
-    else if (button_pressed_counter >= CANT_SHORTPRESS_LEN){
-      event = EV_SHORTPRESS;
-    }
-    button_pressed_counter = 0;
-  }
-  return event;
-}
+events handle_button();
 
 
 void setup() {
@@ -415,4 +387,33 @@ void applySpeedsToMotors(MotorsSpeeds motorSpeeds) {
     digitalWrite(PIN_MOTOR_R_2, LOW);
     analogWrite(PIN_MOTOR_R_PWM, 0);
   }
+}
+
+events handle_button()
+{
+  static int button_pressed_counter = 0;
+  static int button_not_pressed_counter = 0;
+  events event = EV_NONE;
+  int button_now_pressed = !digitalRead(PIN_BUTTON); // pin low -> pressed
+
+  if (button_now_pressed){
+    // Serial.println("Button pressed");
+    ++button_pressed_counter;
+    button_not_pressed_counter = 0;
+  }    
+  else{
+    ++button_not_pressed_counter;
+    // button_pressed_counter = 0;
+  }
+
+  if (button_not_pressed_counter >= CANT_SHORTPRESS_LEN){
+    if (button_pressed_counter >= CANT_LONGPRESS_LEN){
+    event = EV_LONGPRESS;
+    }
+    else if (button_pressed_counter >= CANT_SHORTPRESS_LEN){
+      event = EV_SHORTPRESS;
+    }
+    button_pressed_counter = 0;
+  }
+  return event;
 }
