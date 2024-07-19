@@ -14,7 +14,7 @@ void loop() {
 
   if(Serial.available() > 0) {
     rcvd = Serial.read();
-    if (rcvd == '\n' || rcvd == '\r'){
+    if (rcvd == '\n' || rcvd == '\r' || rcvd == '\0' || rcvd == '#') {
       Serial.println();
     }
     else{
