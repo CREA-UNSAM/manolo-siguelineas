@@ -106,6 +106,8 @@ void setup()
 
     // initialize the serial communication
     Serial.begin(9600);
+    Serial.write("sidjklasdfjklsdf");
+    
     Serial.println("STARTING THE PROGRAM#");
 
     // initialize the LED pin as an output
@@ -176,7 +178,7 @@ void loop()
         Serial.println("==============================================================#");
     }
 
-    delay(100);
+    delay(500);
 }
 
 SensorsData readSensorsValues()
