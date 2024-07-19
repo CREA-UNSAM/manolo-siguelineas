@@ -78,7 +78,7 @@ CalibrationValues calibrationValues = CalibrationValues();
 //VARIABLES PID
 double Setpoint, Input, Output;
 double Kp = 2.0, Ki = 5.0, Kd = 1.0;
-const int SPEED_BASE = 200; // Velocidad base de los motores
+const int SPEED_BASE = 30; // Velocidad base de los motores
 
 //PID
 PID myPID(&Input, &Output, &Setpoint, Kp, Ki, Kd, DIRECT);
@@ -272,9 +272,11 @@ SensorsData readSensorsValues() {
   sensorData.digitalSensorValues[0] = digitalRead(PINS_DIGITAL_SENSORS[0]);
 
   //----analog to digital conversion
-  for (int i = 0; i < CANT_ANALOG_SENSORS; i++) {
-    sensorData.digitalSensorValues[i + 1] = sensorData.analogSensorValues[i] > (ANALOG_SENSOR_THRESHOLD / 2) ? 1 : 0;
-  }
+  for (int i = 0; i < CANT_ANALOG_SENSORS; i++)
+    {
+        sensorData.digitalSensorValues[i] = sensorData.analogSensorValues[i] > MOTORS_MAX_PWM_VALUE + MOTORS_MAX_PWM_VALUE / 2 ? 1 : 0;
+        //map(sensorData.analogSensorValues[i], calibrationValues.minValues[i], calibrationValues.maxValues[i], 0, 100)
+    }
 
   sensorData.digitalSensorValues[CANT_ALL_SENSORS - 1] = digitalRead(PINS_DIGITAL_SENSORS[1]);
 
@@ -335,11 +337,21 @@ MotorsSpeeds calculateMotorsSpeeds(SensorsData sensorData) {
   */
 
   // Método 3: Peso diferenciado
-  /*
-  Input = (analogSensorValues[0] * 0.1) + (analogSensorValues[1] * 0.2) + 
-          (analogSensorValues[2] * 0.3) + (analogSensorValues[3] * 0.3) + 
-          (analogSensorValues[4] * 0.1);
-  */
+  
+  int[6] weights = [-1, -4, -8, 8, 4, 1];
+  
+  Input = 0;
+  for (int i = 0; i < 6; i++) {
+    Input += sensorData.analogSensorValues[i] * weights;
+  }
+  
+  
+// 
+//  Input = (analogSensorValues[0] * 0.1) + (analogSensorValues[1] * 0.2) + 
+//          (analogSensorValues[2] * 0.3) + (analogSensorValues[3] * 0.3) + 
+//          (analogSensorValues[4] * 0.1);
+// 
+ 
  //Método 4: Suma ponderada
  //Calcula pesos basados en la posición relativa al centro
   /*

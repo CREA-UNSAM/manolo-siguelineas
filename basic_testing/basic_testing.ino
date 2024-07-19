@@ -137,8 +137,6 @@ void setup()
 
     // Configurar el PID
     Setpoint = 0; // Ajustar el setpoint según sea necesario
-    myPID.SetMode(AUTOMATIC);
-    myPID.SetOutputLimits(-MOTORS_MAX_PWM_VALUE, MOTORS_MAX_PWM_VALUE);
     // print the message to the serial monitor
     Serial.println("INITIALIZATION COMPLETED#");
 
@@ -150,19 +148,14 @@ void loop()
 
     events event = handle_button();
 
-    if (DEBUG)
-    {
-        // Serial.print(event);
-        Serial.println(event, "#");
-    }
-
+ 
     // print for serial monitor the event
     if (DEBUG)
     {
-        // Serial.print(event);
-        Serial.print(digitalRead(PIN_BUTTON));
+        Serial.print(event);
+        Serial.println("#");
     }
-
+    
     SensorsData sensorData = readSensorsValues();
 
     if (DEBUG)
@@ -203,7 +196,8 @@ SensorsData readSensorsValues()
     //----analog to digital conversion using calibration values
     for (int i = 0; i < CANT_ANALOG_SENSORS; i++)
     {
-        sensorData.analogSensorValues[i] = map(sensorData.analogSensorValues[i], calibrationValues.minValues[i], calibrationValues.maxValues[i], 0, 100);
+        sensorData.digitalSensorValues[i] = sensorData.analogSensorValues[i] > MOTORS_MAX_PWM_VALUE + MOTORS_MAX_PWM_VALUE / 2 ? 1 : 0;
+        //map(sensorData.analogSensorValues[i], calibrationValues.minValues[i], calibrationValues.maxValues[i], 0, 100)
     }
 
     sensorData.digitalSensorValues[CANT_ALL_SENSORS - 1] = digitalRead(PINS_DIGITAL_SENSORS[1]);
@@ -211,6 +205,8 @@ SensorsData readSensorsValues()
     // return the sensor data
     return sensorData;
 }
+
+
 
 void printSensorsValues(SensorsData sensorData)
 {
@@ -237,8 +233,8 @@ MotorsSpeeds calculateMotorsSpeeds(SensorsData sensorData)
     MotorsSpeeds motorsSpeeds;
 
     // Asegurarse de que las velocidades no excedan los límites
-    motorsSpeeds.leftSpeed = constrain(motorsSpeeds.leftSpeed, -MOTORS_MAX_PWM_VALUE, MOTORS_MAX_PWM_VALUE);
-    motorsSpeeds.rightSpeed = constrain(motorsSpeeds.rightSpeed, -MOTORS_MAX_PWM_VALUE, MOTORS_MAX_PWM_VALUE);
+    motorsSpeeds.leftSpeed = 0;
+    motorsSpeeds.rightSpeed = 0;
 
     return motorsSpeeds;
 }
