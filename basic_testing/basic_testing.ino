@@ -134,13 +134,19 @@ void setup() {
 void loop() {
 
   events event = handle_button();
-  //print for serial monitor the event
-  if(DEBUG){
+
+    if (DEBUG)
+    {
+        // Serial.print(event);
+        Serial.println(event, "#");
+    }
+
+    // print for serial monitor the event
+    if (DEBUG)
+    {
     // Serial.print(event);
     Serial.print(digitalRead(PIN_BUTTON));
   }
-
-  switch (currentState) {
 
     SensorsData sensorData = readSensorsValues();
     
@@ -156,7 +162,8 @@ void loop() {
 
     // applySpeedsToMotors(motorsSpeeds);
 
-    if(DEBUG){
+    if (DEBUG)
+    {
         Serial.println("==============================================================#");
     }
 
