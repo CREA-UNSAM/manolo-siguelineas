@@ -319,7 +319,11 @@ MotorsSpeeds calculateMotorsSpeeds(SensorsData sensorData) {
   //Sería necesario analizar cuál opción conviene más.
 
   // Método 1: Promedio de todos los sensores analógicos
-
+  int sum = 0;
+  for (int i = 0; i < 6; i++) {
+    sum += sensorData.analogSensorValues[i];
+  }
+  Input = sum / 6;
 
   // Método 2: Valor máximo de los sensores
   /*
@@ -350,16 +354,14 @@ MotorsSpeeds calculateMotorsSpeeds(SensorsData sensorData) {
  
  //Método 4: Suma ponderada
  //Calcula pesos basados en la posición relativa al centro
-  
+  /*
   float weightedSum = 0.0;
   for (int i = 0; i < 6; i++) {
-      float centerOffset = i - 4.5;  // Offset desde el centro
+      float centerOffset = i - 2.5;  // Offset desde el centro
       float weight = centerOffset > 0 ? centerOffset + 0.5 : centerOffset - 0.5;  // Ajuste de peso gradual
-      weightedSum += sensorData.analogSensorValues[i] * weight;
+      weightedSum += analogSensorValues[i] * weight;
   }
-  
-  Input = weightedSum;
-  
+  */
   // Calcular el PID
   myPID.Compute();
 
@@ -405,12 +407,12 @@ void applySpeedsToMotors(MotorsSpeeds motorSpeeds) {
 
   // Motor derecho
   if (motorSpeeds.rightSpeed > 0) {
-    digitalWrite(PIN_MOTOR_R_1, LOW);
-    digitalWrite(PIN_MOTOR_R_2, HIGH);
-    analogWrite(PIN_MOTOR_R_PWM, motorSpeeds.rightSpeed);
-  } else if (motorSpeeds.rightSpeed < 0) {
     digitalWrite(PIN_MOTOR_R_1, HIGH);
     digitalWrite(PIN_MOTOR_R_2, LOW);
+    analogWrite(PIN_MOTOR_R_PWM, motorSpeeds.rightSpeed);
+  } else if (motorSpeeds.rightSpeed < 0) {
+    digitalWrite(PIN_MOTOR_R_1, LOW);
+    digitalWrite(PIN_MOTOR_R_2, HIGH);
     analogWrite(PIN_MOTOR_R_PWM, -motorSpeeds.rightSpeed); 
   } else {
     digitalWrite(PIN_MOTOR_R_1, LOW);
