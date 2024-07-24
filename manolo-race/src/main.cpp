@@ -78,7 +78,7 @@ CalibrationValues calibrationValues = CalibrationValues();
 //VARIABLES PID
 double Setpoint, Input, Output;
 double Kp = 2.0, Ki = 5.0, Kd = 1.0;
-const int SPEED_BASE = 200; // Velocidad base de los motores
+const int SPEED_BASE = 30; // Velocidad base de los motores
 
 //PID
 PID myPID(&Input, &Output, &Setpoint, Kp, Ki, Kd, DIRECT);
@@ -140,7 +140,7 @@ void loop() {
   events event = handle_button();
   //print for serial monitor the event
   if(DEBUG){
-    // Serial.print(event);
+    Serial.print(event);
     Serial.print(digitalRead(PIN_BUTTON));
   }
 
@@ -284,7 +284,7 @@ void printSensorsValues(SensorsData sensorData) {
 
   Serial.print("DIGITAL SENSOR VALUES: ");
   for (int i = 0; i < 8; i++) {
-    Serial.print(sensorData.digitalSensorValues[i] == 1 ? "[|]" : " ___");
+    Serial.print(sensorData.digitalSensorValues[i] == 1 ? "[" + string(i) + "]" : " ___");
   }
 }
 
@@ -308,11 +308,11 @@ MotorsSpeeds calculateMotorsSpeeds(SensorsData sensorData) {
   //Sería necesario analizar cuál opción conviene más.
 
   // Método 1: Promedio de todos los sensores analógicos
-  int sum = 0;
-  for (int i = 0; i < 6; i++) {
-    sum += sensorData.analogSensorValues[i];
-  }
-  Input = sum / 6;
+  // int sum = 0;
+  // for (int i = 0; i < 6; i++) {
+  //   sum += sensorData.analogSensorValues[i];
+  // }
+  // Input = sum / 6;
 
   // Método 2: Valor máximo de los sensores
   /*
@@ -333,14 +333,15 @@ MotorsSpeeds calculateMotorsSpeeds(SensorsData sensorData) {
   */
  //Método 4: Suma ponderada
  //Calcula pesos basados en la posición relativa al centro
-  /*
+  
   float weightedSum = 0.0;
   for (int i = 0; i < 6; i++) {
-      float centerOffset = i - 2.5;  // Offset desde el centro
+      float centerOffset = i - 4.5;  // Offset desde el centro
       float weight = centerOffset > 0 ? centerOffset + 0.5 : centerOffset - 0.5;  // Ajuste de peso gradual
       weightedSum += analogSensorValues[i] * weight;
   }
-  */
+  Input = weightedSum; 
+  
   // Calcular el PID
   myPID.Compute();
 
@@ -386,12 +387,12 @@ void applySpeedsToMotors(MotorsSpeeds motorSpeeds) {
 
   // Motor derecho
   if (motorSpeeds.rightSpeed > 0) {
-    digitalWrite(PIN_MOTOR_R_1, HIGH);
-    digitalWrite(PIN_MOTOR_R_2, LOW);
+    digitalWrite(PIN_MOTOR_R_1, LOW);
+    digitalWrite(PIN_MOTOR_R_2, HIG);
     analogWrite(PIN_MOTOR_R_PWM, motorSpeeds.rightSpeed);
   } else if (motorSpeeds.rightSpeed < 0) {
-    digitalWrite(PIN_MOTOR_R_1, LOW);
-    digitalWrite(PIN_MOTOR_R_2, HIGH);
+    digitalWrite(PIN_MOTOR_R_1, HIGH);
+    digitalWrite(PIN_MOTOR_R_2, LOW);
     analogWrite(PIN_MOTOR_R_PWM, -motorSpeeds.rightSpeed); 
   } else {
     digitalWrite(PIN_MOTOR_R_1, LOW);
