@@ -147,19 +147,24 @@ void loop() {
   switch (currentState) {
 
     case STATE_STOP:
+    {
       if (event == EV_SHORTPRESS) {
         currentState = STATE_RUNNING;
       } else if (event == EV_LONGPRESS) {
         currentState = STATE_CALIBRATION;
       }
       break;
+    }
 
     case STATE_CALIBRATION:
+    {
       calibration();
       currentState = STATE_STOP;
       break;
-
+    }
+    
     case STATE_RUNNING:
+    {
       SensorsData sensorData = readSensorsValues();
       
       if(DEBUG) {
@@ -178,10 +183,14 @@ void loop() {
         Serial.println("==============================================================");
       }
       break;
+    }
     
     default:
+    {
       break;
-  }
+    }
+  
+}
 
 
   delay(100);
@@ -244,7 +253,7 @@ void calibration() {
   }
 
   // applySpeedsToMotors({-255, 255});
-
+  
 
   //print the message to the serial monitor
   Serial.println("CALIBRATION COMPLETED");
@@ -265,7 +274,7 @@ SensorsData readSensorsValues() {
   //----analog to digital conversion
   for (int i = 0; i < CANT_ANALOG_SENSORS; i++) {
     sensorData.digitalSensorValues[i + 1] = sensorData.analogSensorValues[i] > (ANALOG_SENSOR_THRESHOLD / 2) ? 1 : 0;
-  }
+    }
 
   sensorData.digitalSensorValues[CANT_ALL_SENSORS - 1] = digitalRead(PINS_DIGITAL_SENSORS[1]);
 
@@ -326,11 +335,21 @@ MotorsSpeeds calculateMotorsSpeeds(SensorsData sensorData) {
   */
 
   // Método 3: Peso diferenciado
-  /*
-  Input = (analogSensorValues[0] * 0.1) + (analogSensorValues[1] * 0.2) + 
-          (analogSensorValues[2] * 0.3) + (analogSensorValues[3] * 0.3) + 
-          (analogSensorValues[4] * 0.1);
-  */
+  
+  //int[6] weights = [-1, -4, -8, 8, 4, 1];
+  
+  //Input = 0;
+  //for (int i = 0; i < 6; i++) {
+   // Input += sensorData.analogSensorValues[i] * weights;
+  //}
+  
+  
+// 
+//  Input = (analogSensorValues[0] * 0.1) + (analogSensorValues[1] * 0.2) + 
+//          (analogSensorValues[2] * 0.3) + (analogSensorValues[3] * 0.3) + 
+//          (analogSensorValues[4] * 0.1);
+// 
+ 
  //Método 4: Suma ponderada
  //Calcula pesos basados en la posición relativa al centro
   
