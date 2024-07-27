@@ -293,7 +293,7 @@ void printSensorsValues(SensorsData sensorData) {
 
   Serial.print("DIGITAL SENSOR VALUES: ");
   for (int i = 0; i < 8; i++) {
-    Serial.print(sensorData.digitalSensorValues[i] == 1 ? "[" + string(i) + "]" : " ___");
+    Serial.print(sensorData.digitalSensorValues[i] == 1 ? "[" + String(i) + "]" : " ___");
   }
 }
 
@@ -357,7 +357,7 @@ MotorsSpeeds calculateMotorsSpeeds(SensorsData sensorData) {
   for (int i = 0; i < 6; i++) {
       float centerOffset = i - 4.5;  // Offset desde el centro
       float weight = centerOffset > 0 ? centerOffset + 0.5 : centerOffset - 0.5;  // Ajuste de peso gradual
-      weightedSum += analogSensorValues[i] * weight;
+      weightedSum += sensorData.analogSensorValues[i] * weight;
   }
   Input = weightedSum; 
   
@@ -407,7 +407,7 @@ void applySpeedsToMotors(MotorsSpeeds motorSpeeds) {
   // Motor derecho
   if (motorSpeeds.rightSpeed > 0) {
     digitalWrite(PIN_MOTOR_R_1, LOW);
-    digitalWrite(PIN_MOTOR_R_2, HIG);
+    digitalWrite(PIN_MOTOR_R_2, HIGH);
     analogWrite(PIN_MOTOR_R_PWM, motorSpeeds.rightSpeed);
   } else if (motorSpeeds.rightSpeed < 0) {
     digitalWrite(PIN_MOTOR_R_1, HIGH);
