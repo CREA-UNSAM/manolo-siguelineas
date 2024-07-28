@@ -41,13 +41,17 @@ const int PINS_DIGITAL_SENSORS[CANT_DIGITAL_SENSORS] = {PIN_SENSOR_0, PIN_SENSOR
 //GLOBAL CONSTANTS
 #define ANALOG_SENSOR_THRESHOLD   1024
 #define ANALOG_SENSOR_MAX         1024
-#define MOTORS_MAX_PWM_VALUE      1024
+#define MOTORS_MAX_PWM_VALUE      255
 
 #define DELAY_MS_MAIN_LOOP  100
 
-#define CANT_LONGPRESS_LEN    2500 / DELAY_MS_MAIN_LOOP  // 2.5 seconds
-#define CANT_SHORTPRESS_LEN   500 / DELAY_MS_MAIN_LOOP   // 0.5 seconds
-#define CANT_WAIT_TO_ACTION_LEN   200 / DELAY_MS_MAIN_LOOP   // 0.2 seconds
+#define CANT_LONGPRESS_LEN    600 / DELAY_MS_MAIN_LOOP  // 2.5 seconds
+#define CANT_SHORTPRESS_LEN   100 / DELAY_MS_MAIN_LOOP   // 0.1 seconds
+// #define CANT_WAIT_TO_ACTION_LEN   200 / DELAY_MS_MAIN_LOOP   // 0.2 seconds
+
+
+
+
 
 //STRUCTURES
 struct MotorsSpeeds {
@@ -78,7 +82,10 @@ CalibrationValues calibrationValues = CalibrationValues();
 //VARIABLES PID
 double Setpoint, Input, Output;
 double Kp = 2.0, Ki = 5.0, Kd = 1.0;
-const int SPEED_BASE = 30; // Velocidad base de los motores
+
+const int SPEED_BASE = 50; // Velocidad base de los motores
+const int SPEED_INCREMENT = 30; // Velocidad base de los motores
+
 
 //PID
 PID myPID(&Input, &Output, &Setpoint, Kp, Ki, Kd, DIRECT);
@@ -92,6 +99,58 @@ MotorsSpeeds calculateMotorsSpeeds(SensorsData sensorData);
 void printMotorsSpeeds(MotorsSpeeds motorSpeeds);
 void applySpeedsToMotors(MotorsSpeeds motorSpeeds);
 events handle_button();
+void handle_led(events event);
+
+
+void handle_led(state currentState) {
+  static int count = 0;
+  static int ledState = 0;
+  // 0.1 seconds
+
+  switch (currentState)
+  {
+    case STATE_SETUP:
+    {
+      if (count > 100 / DELAY_MS_MAIN_LOOP){
+        ledState = !ledState;
+        count = 0;
+      } else {
+        ++count;
+        ledState = !ledState;
+      }
+      break;
+    }
+    case STATE_STOP:
+    {
+      ledState = HIGH;
+      break;
+    }
+    case STATE_CALIBRATION:
+    {
+      if (count > 1000 / DELAY_MS_MAIN_LOOP){
+        ledState = !ledState;
+        count = 0;
+      } else {
+        ++count;
+        ledState = !ledState;
+      }
+      break;
+    }
+    case STATE_RUNNING:
+    {
+      if (count > 1500 / DELAY_MS_MAIN_LOOP){
+        ledState = !ledState;
+        count = 0;
+      } else {
+        ++count;
+        ledState = !ledState;
+      }
+      break;
+    }
+  }
+
+  digitalWrite(PIN_LED, ledState);
+}
 
 
 void setup() {
@@ -138,10 +197,17 @@ void setup() {
 void loop() {
 
   events event = handle_button();
+
+  handle_led(currentState);
+
   //print for serial monitor the event
   if(DEBUG){
+    Serial.print("E: "); // event
     Serial.print(event);
+    Serial.print(" | B: "); // button
     Serial.print(digitalRead(PIN_BUTTON));
+    Serial.print(" | S: "); // state
+    Serial.println(currentState);
   }
 
   switch (currentState) {
@@ -152,19 +218,25 @@ void loop() {
         currentState = STATE_RUNNING;
       } else if (event == EV_LONGPRESS) {
         currentState = STATE_CALIBRATION;
-      }
-      break;
-    }
-
-    case STATE_CALIBRATION:
-    {
-      calibration();
-      currentState = STATE_STOP;
+      } 
       break;
     }
     
+    case STATE_CALIBRATION:
+    {
+        calibration();
+        currentState = STATE_STOP;
+        break;
+      }
+
     case STATE_RUNNING:
     {
+
+      if (event == EV_SHORTPRESS) {
+        currentState = STATE_STOP;
+        break;
+      }
+
       SensorsData sensorData = readSensorsValues();
       
       if(DEBUG) {
@@ -179,9 +251,10 @@ void loop() {
 
       applySpeedsToMotors(motorsSpeeds);
 
-      if(DEBUG){
-        Serial.println("==============================================================");
-      }
+      // if(DEBUG){
+      //   Serial.println("==============================================================");
+      // }
+
       break;
     }
     
@@ -193,7 +266,7 @@ void loop() {
 }
 
 
-  delay(100);
+  delay(DELAY_MS_MAIN_LOOP);
 }
 
 void calibration() {
@@ -259,6 +332,7 @@ void calibration() {
   Serial.println("CALIBRATION COMPLETED");
 }
 
+
 SensorsData readSensorsValues() {
 
   SensorsData sensorData;
@@ -284,35 +358,35 @@ SensorsData readSensorsValues() {
 
 void printSensorsValues(SensorsData sensorData) {
   //print the values of the sensors to the serial monitor
-  Serial.print("ANALOG  SENSOR VALUES: ");
+  Serial.print("AV: ");
   for (int i = 0; i < 6; i++) {
     Serial.print(sensorData.analogSensorValues[i]);
     Serial.print(" : ");
   }
   Serial.println("");
 
-  Serial.print("DIGITAL SENSOR VALUES: ");
+  Serial.print("DV: ");
   for (int i = 0; i < 8; i++) {
-    Serial.print(sensorData.digitalSensorValues[i] == 1 ? "[" + String(i) + "]" : " ___");
+    Serial.print(sensorData.digitalSensorValues[i] == 1 ? " [" + String(i) + "]" : " ___");
   }
 }
 
 MotorsSpeeds calculateMotorsSpeeds(SensorsData sensorData) {
 
-  MotorsSpeeds motorsSpeeds;
+  MotorsSpeeds motorsSpeeds; 
   // Calcular el valor de entrada del PID basado en los sensores
 
-  if( sensorData.digitalSensorValues[0] == 1 && sensorData.digitalSensorValues[7] == 1){
-    //Si ambos sensores digitales detectan una línea, se detiene el robot
-    Input = 0;
-    myPID.SetMode(MANUAL);
-    myPID.SetOutputLimits(-MOTORS_MAX_PWM_VALUE, MOTORS_MAX_PWM_VALUE);
-    myPID.SetTunings(0, 0, 0);
-    myPID.Compute();
-    motorsSpeeds.leftSpeed = 0;
-    motorsSpeeds.rightSpeed = 0;
-    return motorsSpeeds;
-  }
+  // if( sensorData.digitalSensorValues[0] == 1 && sensorData.digitalSensorValues[7] == 1){
+  //   //Si ambos sensores digitales detectan una línea, se detiene el robot
+  //   Input = 0;
+  //   myPID.SetMode(MANUAL);
+  //   myPID.SetOutputLimits(-MOTORS_MAX_PWM_VALUE, MOTORS_MAX_PWM_VALUE);
+  //   myPID.SetTunings(0, 0, 0);
+  //   myPID.Compute();
+  //   motorsSpeeds.leftSpeed = 0;
+  //   motorsSpeeds.rightSpeed = 0;
+  //   return motorsSpeeds;
+  // }
 
   //Sería necesario analizar cuál opción conviene más.
 
@@ -329,7 +403,7 @@ MotorsSpeeds calculateMotorsSpeeds(SensorsData sensorData) {
   for (int i = 1; i < 6; i++) {
     if (analogSensorValues[i] > maxVal) {
       maxVal = analogSensorValues[i];
-    }
+  }
   }
   Input = maxVal;
   */
@@ -360,11 +434,14 @@ MotorsSpeeds calculateMotorsSpeeds(SensorsData sensorData) {
       weightedSum += sensorData.analogSensorValues[i] * weight;
   }
   Input = weightedSum; 
+
+  Serial.print("Input: ");
+  Serial.println(Input);
   
   // Calcular el PID
   myPID.Compute();
 
-
+  
   //El output va a ir tomando valores positivos y negativos 
   motorsSpeeds.leftSpeed = SPEED_BASE + Output; // Motor izquierdo
   motorsSpeeds.rightSpeed = SPEED_BASE - Output; // Motor derecho - EL MENOS ES A PROPOSITO NO BORRAR
@@ -375,6 +452,32 @@ MotorsSpeeds calculateMotorsSpeeds(SensorsData sensorData) {
 
   return motorsSpeeds;
 }
+
+// MotorsSpeeds calculateMotorsSpeeds(SensorsData sensorData) {
+
+//   MotorsSpeeds motorsSpeeds;
+  
+//   //calcular el error
+//   int rightDetections = 0;
+//   for (int i = 0; i < CANT_DIGITAL_SENSORS / 2; i++) {
+//     rightDetections += sensorData.digitalSensorValues[i];
+//   }
+
+//   int leftDetections = 0;
+//   for (int i = CANT_DIGITAL_SENSORS / 2; i < CANT_DIGITAL_SENSORS; i++) {
+//     leftDetections += sensorData.digitalSensorValues[i];
+//   }
+
+//   //El output va a ir tomando valores positivos y negativos 
+//   motorsSpeeds.leftSpeed = SPEED_BASE + SPEED_INCREMENT * leftDetections; // Motor izquierdo
+//   motorsSpeeds.rightSpeed = SPEED_BASE + SPEED_INCREMENT * rightDetections; // Motor derecho
+
+//   // Asegurarse de que las velocidades no excedan los límites
+//   motorsSpeeds.leftSpeed = constrain(motorsSpeeds.leftSpeed, -MOTORS_MAX_PWM_VALUE, MOTORS_MAX_PWM_VALUE);
+//   motorsSpeeds.rightSpeed = constrain(motorsSpeeds.rightSpeed, -MOTORS_MAX_PWM_VALUE, MOTORS_MAX_PWM_VALUE);
+
+//   return motorsSpeeds;
+// }
 
 void printMotorsSpeeds(MotorsSpeeds motorSpeeds) {
   //print the motor speeds to the serial monitor
@@ -428,13 +531,11 @@ events handle_button()
   int button_now_pressed = !digitalRead(PIN_BUTTON); // pin low -> pressed
 
   if (button_now_pressed){
-    // Serial.println("Button pressed");
     ++button_pressed_counter;
     button_not_pressed_counter = 0;
   }    
   else{
     ++button_not_pressed_counter;
-    // button_pressed_counter = 0;
   }
 
   if (button_not_pressed_counter >= CANT_SHORTPRESS_LEN){
